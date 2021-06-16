@@ -1,0 +1,91 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © ownsov
+
+//@version=4
+strategy("My Strategy", overlay=true, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+startDate = input(title="Start Date", type=input.integer,
+     defval=12, minval=1, maxval=31)
+startMonth = input(title="Start Month", type=input.integer,
+     defval=1, minval=1, maxval=12)
+startYear = input(title="Start Year", type=input.integer,
+     defval=2021, minval=1800, maxval=2100)
+
+endDate = input(title="End Date", type=input.integer,
+     defval=13, minval=1, maxval=31)
+endMonth = input(title="End Month", type=input.integer,
+     defval=6, minval=1, maxval=12)
+endYear = input(title="End Year", type=input.integer,
+     defval=2021, minval=1800, maxval=2100)
+
+inDateRange = (time >= timestamp(syminfo.timezone, startYear,
+         startMonth, startDate, 0, 0)) and
+     (time < timestamp(syminfo.timezone, endYear, endMonth, endDate, 0, 0))
+
+// fractal inputs
+ShowFractals = input(defval = true, title="Show Fractals")
+n = input(title="Fractal periods", defval=2, minval=2, type=input.integer)
+
+// upfractal calculations
+
+bool upFractalRightSlope = true
+bool upFractalLeftSlope = true
+
+for i = 1 to n
+    upFractalRightSlope := upFractalRightSlope and (high[n-i] < high[n])
+    upFractalLeftSlope := upFractalLeftSlope and (high[n+i] < high[n])
+
+// downfractal calculations
+bool downFractalRightSlope = true
+bool downFractalLeftSlope = true
+
+for i = 1 to n
+    downFractalRightSlope := downFractalRightSlope and (low[n-i] > low[n])
+    downFractalLeftSlope := downFractalLeftSlope and (low[n+i] > low[n])
+
+// fractal signals
+upFractal = (ShowFractals and upFractalRightSlope and upFractalLeftSlope)
+downFractal = (ShowFractals and downFractalRightSlope and downFractalLeftSlope)
+
+// plot
+plotshape(downFractal, "Down Fractal", style=shape.cross, location=location.belowbar, offset=-n, color=color.blue, size = size.tiny)
+plotshape(upFractal, "Up Fractal", style=shape.cross, location=location.abovebar, offset=-n, color=color.blue, size = size.tiny)
+
+//Format for a 21
+len4 = input(21, minval=1, title="Length")
+src4 = input(close, title="Source")
+out4 = ema(src4, len4)
+plot(out4, color=color.black, title="21")
+//End of format
+
+//Format for a 50
+len5 = input(50, minval=1, title="Length")
+src5 = input(close, title="Source")
+out5 = ema(src5, len5)
+plot(out5, color=color.green, title="50")
+//End of format
+
+//Format for a 200
+len6 = input(200, minval=1, title="Length")
+src6 = input(close, title="Source")
+out6 = ema(src6, len6)
+plot(out6, color=color.red, title="200")
+//End of format
+
+rsiValue = rsi(close, 14)
+
+buySignal = (close > out4) and ( out4 > out5 ) and (out5 > out6) and (rsiValue > 50)
+
+if upFractal and inDateRange
+    l = label.new(bar_index[n], na, tostring(high[n],"#.##"),
+         color=color.new(color.blue,40),
+         textcolor=color.black,
+         style=label.style_labeldown, yloc=yloc.abovebar)
+    strategy.entry("buy", strategy.long, when=(buySignal))
+
+if downFractal and inDateRange
+    l = label.new(bar_index[n], na, tostring(low[n],"#.##"),
+         color=color.new(color.blue,40),
+         textcolor=color.green,
+         style=label.style_labelup, yloc=yloc.belowbar)
+    strategy.close("buy")
