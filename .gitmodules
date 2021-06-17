@@ -1,3 +1,6 @@
 [submodule ".vscode"]
 	path = .vscode
 	url = https://github.com/ricardosantos79/vscode_pinescript_snippet
+[submodule "pine_script_docs"]
+	path = pine_script_docs
+	url = https://github.com/tradingview/pine_script_docs.git
